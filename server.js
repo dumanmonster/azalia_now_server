@@ -5,13 +5,11 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
-
 let messages = [];
 let calculations = [];
 
 app.use(express.json());
 app.use(cors());
-
 
 app.post("/api/messages", (req, res) => {
   fs.readFile(path.join(__dirname, "messages.json"), (err, data) => {
@@ -22,11 +20,11 @@ app.post("/api/messages", (req, res) => {
     let messages = JSON.parse(data);
     messages = Array.isArray(messages) ? messages : [];
     messages.push(req.body);
-    
+
     fs.writeFile(
       path.join(__dirname, "messages.json"),
       JSON.stringify(messages),
-      err => {
+      (err) => {
         if (err) {
           return res
             .status(500)
@@ -39,7 +37,6 @@ app.post("/api/messages", (req, res) => {
   });
 });
 
-
 app.post("/api/calculations", (req, res) => {
   fs.readFile(path.join(__dirname, "numbers.json"), (err, data) => {
     if (err) {
@@ -49,28 +46,41 @@ app.post("/api/calculations", (req, res) => {
     let numbers = JSON.parse(data);
     numbers = Array.isArray(numbers) ? numbers : [];
     let requested = req.body.number;
-    let previous = numbers.slice(-1)[0];
-    numbers.push(requested);
-    
-    
+    let previous = numbers.slice(-1)[0].previous;
+    numbers.push({
+      previous,
+      requested,
+      average: (+requested + +previous) / 2,
+    });
+
     fs.writeFile(
       path.join(__dirname, "numbers.json"),
       JSON.stringify(numbers),
-      err => {
+      (err) => {
         if (err) {
           return res
             .status(500)
             .send({ error: "Error writing to numbers file" });
         }
 
-        res.send({ previous, requested, average: (+requested + +previous) / 2});
+        res.send({
+          previous,
+          requested,
+          average: (+requested + +previous) / 2,
+        });
       }
     );
   });
 });
 
 app.get("/api/history", (req, res) => {
-  res.status(200).json({ messages, calculations });
+  fs.readFile(path.join(__dirname, "numbers.json"), (err, data) => {
+    if (err) {
+      return res.status(500).send({ error: "Error reading numbers file" });
+    }
+
+    res.send(JSON.parse(data));
+  });
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
