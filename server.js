@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-
+const cors = require('cors')
 // an array to store the messages
 let messages = [{
   author: 'John Doe',
@@ -12,6 +12,7 @@ let messages = [{
 let numbers = [];
 let avg = 0;
 
+app.use(cors());
 // endpoint 1: POST to add new messages
 app.post('/api/add-message', (req, res) => {
   const { author, text } = req.body;
@@ -33,7 +34,7 @@ app.get('/api/get-numbers', (req, res) => {
   res.send({ numbers, avg });
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
