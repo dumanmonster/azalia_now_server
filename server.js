@@ -1,29 +1,39 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-let messages = [];
-let calculations = [];
+// an array to store the messages
+let messages = [{
+  author: 'John Doe',
+  text: 'Hello, this is a message',
+  date: new Date().toLocaleString()
+}];
 
-app.use(express.json());
+// an array to store the numbers and their average
+let numbers = [];
+let avg = 0;
 
-app.post('/api/messages', (req, res) => {
-  const { text, author } = req.body;
-  const message = { text, author };
-  messages.push(message);
-  res.status(201).json({ message: 'Message added successfully' });
+// endpoint 1: POST to add new messages
+app.post('/api/add-message', (req, res) => {
+  const { author, text } = req.body;
+  messages.push({
+    author,
+    text,
+    date: new Date().toLocaleString()
+  });
+  res.send({ message: 'Message added successfully' });
 });
 
-app.post('/api/calculations', (req, res) => {
-  const { value } = req.body;
-  calculations.push(value);
-  const average =
-    calculations.reduce((acc, current) => acc + current, 0) / calculations.length;
-  res.status(200).json({ average });
+// endpoint 2: POST to receive messages between them and memorable dates in response
+app.post('/api/get-messages', (req, res) => {
+  res.send({ messages });
 });
 
-app.get('/api/history', (req, res) => {
-  res.status(200).json({ messages, calculations });
+// endpoint 3: GET to get information about all previous numbers and calculations
+app.get('/api/get-numbers', (req, res) => {
+  res.send({ numbers, avg });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
