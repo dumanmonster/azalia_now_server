@@ -1,40 +1,76 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const cors = require('cors')
-// an array to store the messages
-let messages = [{
-  author: 'John Doe',
-  text: 'Hello, this is a message',
-  date: new Date().toLocaleString()
-}];
+const PORT = process.env.PORT || 4000;
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
-// an array to store the numbers and their average
-let numbers = [];
-let avg = 0;
 
+let messages = [];
+let calculations = [];
+
+app.use(express.json());
 app.use(cors());
-// endpoint 1: POST to add new messages
-app.post('/api/add-message', (req, res) => {
-  const { author, text } = req.body;
-  messages.push({
-    author,
-    text,
-    date: new Date().toLocaleString()
+
+
+app.post("/api/messages", (req, res) => {
+  fs.readFile(path.join(__dirname, "messages.json"), (err, data) => {
+    if (err) {
+      return res.status(500).send({ error: "Error reading messages file" });
+    }
+
+    let messages = JSON.parse(data);
+    messages = Array.isArray(messages) ? messages : [];
+    messages.push(req.body);
+    
+    fs.writeFile(
+      path.join(__dirname, "messages.json"),
+      JSON.stringify(messages),
+      err => {
+        if (err) {
+          return res
+            .status(500)
+            .send({ error: "Error writing to messages file" });
+        }
+
+        res.send({ message: req.body });
+      }
+    );
   });
-  res.send({ message: 'Message added successfully' });
 });
 
-// endpoint 2: POST to receive messages between them and memorable dates in response
-app.post('/api/get-messages', (req, res) => {
-  res.send({ messages });
+
+app.post("/api/calculations", (req, res) => {
+  fs.readFile(path.join(__dirname, "numbers.json"), (err, data) => {
+    if (err) {
+      return res.status(500).send({ error: "Error reading numbers file" });
+    }
+
+    let numbers = JSON.parse(data);
+    numbers = Array.isArray(numbers) ? numbers : [];
+    let requested = req.body.number;
+    let previous = numbers.slice(-1)[0];
+    numbers.push(requested);
+    
+    
+    fs.writeFile(
+      path.join(__dirname, "numbers.json"),
+      JSON.stringify(numbers),
+      err => {
+        if (err) {
+          return res
+            .status(500)
+            .send({ error: "Error writing to numbers file" });
+        }
+
+        res.send({ previous, requested, average: (+requested + +previous) / 2});
+      }
+    );
+  });
 });
 
-// endpoint 3: GET to get information about all previous numbers and calculations
-app.get('/api/get-numbers', (req, res) => {
-  res.send({ numbers, avg });
+app.get("/api/history", (req, res) => {
+  res.status(200).json({ messages, calculations });
 });
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
